@@ -284,19 +284,27 @@ def resolve_service(service_name, dns_client=client, cache=SERVER_CACHE, clock=t
             srv_ttl = answer.ttl
 
             try:
-                answers, _, _ = yield dns_client.lookupAddress(host)
+                answers, _, _  = yield dns_client.lookupAddress(host)
+                answers6, _, _ = yield dns_client.lookupIPV6Address(host)
+                answers += answers6
             except DNSNameError:
                 continue
 
             for answer in answers:
-                if answer.type == dns.A and answer.payload:
-                    ip = answer.payload.dottedQuad()
+                if answer.type in (dns.A, dns.AAAA) and answer.payload:
+                    if answer.type == dns.AAAA:
+                        ip   = answer.payload._address
+                        prio = 0
+                    else:
+                        ip   = answer.payload.dottedQuad()
+                        prio = 1
+
                     host_ttl = min(srv_ttl, answer.ttl)
 
                     servers.append(_Server(
                         host=ip,
                         port=int(payload.port),
-                        priority=int(payload.priority),
+                        priority=int(payload.priority) * 2 + prio,
                         weight=int(payload.weight),
                         expires=int(clock.time()) + host_ttl,
                     ))
