@@ -1,0 +1,22 @@
+[Unit]
+Description=Synapse Matrix Worker %I
+PartOf=matrix-synapse.service
+
+[Service]
+Type=forking
+User=matrix-synapse
+
+WorkingDirectory=/var/lib/matrix-synapse
+EnvironmentFile=/etc/default/matrix-synapse
+RuntimeDirectory=matrix-synapse
+
+ExecStart=/usr/bin/synctl  -w /etc/matrix-synapse/workers/%I.yaml start   /etc/matrix-synapse/conf.d
+ExecStop=/usr/bin/synctl   -w /etc/matrix-synapse/workers/%I.yaml stop    /etc/matrix-synapse/conf.d
+ExecReload=/usr/bin/synctl -w /etc/matrix-synapse/workers/%I.yaml restart /etc/matrix-synapse/conf.d
+
+Restart=always
+RestartSec=3
+SyslogIdentifier=matrix-synapse-%I
+
+[Install]
+WantedBy=matrix-synapse.service
